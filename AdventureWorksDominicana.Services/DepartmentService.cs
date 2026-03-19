@@ -24,21 +24,44 @@ public class DepartmentService(IDbContextFactory<Contexto> DbFactory) : IService
         contexto.Departments.Add(entidad);
         return await contexto.SaveChangesAsync() > 0;
     }
-    private async Task<bool> Modificar(Department entidad)
+    private async Task<bool> Modificar(Department newDepartment)
     {
         await using var contexto = await DbFactory.CreateDbContextAsync();
-        contexto.Update(entidad);
+        var oldDepartment = await contexto.Departments.Include(l => l.EmployeeDepartmentHistories).FirstOrDefaultAsync(d => d.DepartmentId == newDepartment.DepartmentId);
+        if (oldDepartment != null)
+        {
+            contexto.EmployeeDepartmentHistories.RemoveRange(oldDepartment.EmployeeDepartmentHistories);
+            contexto.Departments.Entry(oldDepartment).CurrentValues.SetValues(newDepartment);
+        }
+        foreach(var newEmployee in newDepartment.EmployeeDepartmentHistories)
+        {
+            oldDepartment?.EmployeeDepartmentHistories.Add(
+               new EmployeeDepartmentHistory
+               {
+                   BusinessEntityId = newEmployee.BusinessEntityId,
+                   ShiftId = newEmployee.ShiftId,
+                   StartDate = newEmployee.StartDate,
+                   EndDate = newEmployee.EndDate
+               }    
+            );
+        }
         return await contexto.SaveChangesAsync() > 0;
     }
     public async Task<Department?> Buscar(short id)
     {
         await using var contexto = await DbFactory.CreateDbContextAsync();
-        return await contexto.Departments.FirstOrDefaultAsync(d => d.DepartmentId == id);
+        return await contexto.Departments.Include(h => h.EmployeeDepartmentHistories).FirstOrDefaultAsync(d => d.DepartmentId == id);
     }
     public async Task<bool> Eliminar(short id)
     {
         await using var contexto = await DbFactory.CreateDbContextAsync();
-        return await contexto.Departments.AsNoTracking().Where(d => d.DepartmentId == id).ExecuteDeleteAsync() > 0;
+        var oldDepartment = await contexto.Departments.Include(l => l.EmployeeDepartmentHistories).FirstOrDefaultAsync(d => d.DepartmentId == id);
+        if (oldDepartment != null)
+        {
+            contexto.EmployeeDepartmentHistories.RemoveRange(oldDepartment.EmployeeDepartmentHistories);
+            contexto.Departments.Remove(oldDepartment);
+        }
+        return await contexto.SaveChangesAsync() > 0;
     }
     public async Task<List<Department>> GetList(Expression<Func<Department, bool>> criterio)
     {
