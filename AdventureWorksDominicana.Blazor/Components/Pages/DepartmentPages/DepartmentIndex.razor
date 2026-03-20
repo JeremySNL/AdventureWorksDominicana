@@ -19,25 +19,27 @@
             <div class="row">
                 <div class="col-6">
                     <label class="form-label">Desde</label>
-                    <input class="form-control" type="date" />
+                    <input class="form-control" type="date" @bind="StartDate"/>
                 </div>
                 <div class="col-6">
                     <label class="form-label">Hasta</label>
-                    <input class="form-control" type="date" />
+                    <input class="form-control" type="date" @bind="EndDate"/>
                 </div>
             </div>
             <div class="row">
                 <div class="col-6">
                     <label class="form-label">Seleccione una opci&oacute;n</label>
-                    <select class="form-select">
-                        <option value="0">Seleccione una opci&oacute;n</option>
+                    <select class="form-select" @bind="Filtro">
+                        <option value="">Seleccione una opci&oacute;n</option>
+                        <option value="Name">Nombre</option>
+                        <option value="GroupName">Nombre del Grupo</option>
                     </select>
                 </div>
                 <div class="col-6">
                     <label class="form-label">Buscar</label>
                     <div class="input-group">
-                        <input class="form-control" type="text" placeholder="Buscar"/>
-                        <i class="btn btn-outline-primary bi bi-search"></i>
+                        <input class="form-control" type="text" placeholder="Buscar..." @bind="ValorFiltro"/>
+                        <i class="btn btn-outline-primary bi bi-search" @onclick="Buscar"></i>
                     </div>
                 </div>
             </div>
@@ -60,9 +62,24 @@
 @code {
     private List<Department> DepartmentsList = new List<Department>();
     private PaginationState pages = new PaginationState{ ItemsPerPage = 5 };
-
+    private string Filtro = string.Empty, ValorFiltro = string.Empty;
+    private DateTime? StartDate = DateTime.Today.Date, EndDate = DateTime.Today.Date.AddDays(1);
     protected override async Task OnInitializedAsync()
     {
         DepartmentsList = await departmentService.GetList(p => true);
+    }
+    private async Task Buscar()
+    {
+        List<Department> filterList;
+        if (StartDate.HasValue && EndDate.HasValue)
+            filterList = await departmentService.GetList(d => d.ModifiedDate.Date >= StartDate.Value.Date && d.ModifiedDate.Date <= EndDate.Value.Date);
+        else
+            filterList = await departmentService.GetList(p => true);
+        if (!string.IsNullOrWhiteSpace(Filtro))
+            if (Filtro == "Name")
+            filterList = filterList.Where(d => d.Name.ToLower().Contains(ValorFiltro.ToLower())).ToList();
+            else if (Filtro == "GroupName")
+                filterList = filterList.Where(d => d.GroupName.ToLower().Contains(ValorFiltro.ToLower())).ToList();
+        DepartmentsList = filterList;
     }
 }
