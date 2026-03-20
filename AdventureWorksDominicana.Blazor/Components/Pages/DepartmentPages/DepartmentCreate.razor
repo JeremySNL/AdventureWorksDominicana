@@ -4,7 +4,7 @@
 @inject PersonService personService
 @inject ShiftService shiftService
 @inject EmployeeService employeeService
-@inject IToastService toastService
+@inject ToastService toastService
 @inject NavigationManager navigationManager
 
 <PageTitle>Department Create</PageTitle>
@@ -141,7 +141,7 @@
                 EndDate = EmployeeDepartmentHistory.EndDate,
             }
         );
-        toastService.ShowSuccess($"{PersonList.FirstOrDefault(p => p.BusinessEntityId == EmployeeDepartmentHistory.BusinessEntityId).FirstName} {PersonList.FirstOrDefault(p => p.BusinessEntityId == EmployeeDepartmentHistory.BusinessEntityId).FirstName} se añadió correctamente");
+        toastService.ShowSuccess($"{PersonList.FirstOrDefault(p => p.BusinessEntityId == EmployeeDepartmentHistory.BusinessEntityId).FirstName} {PersonList.FirstOrDefault(p => p.BusinessEntityId == EmployeeDepartmentHistory.BusinessEntityId).LastName} se añadió correctamente");
         EmployeeDepartmentHistory = new EmployeeDepartmentHistory();
     }
 
@@ -154,7 +154,7 @@
 
     private async Task Guardar()    
     {
-        var isDepartmentDuplicated = await departmentService.GetList(d => d.Name.Equals(Department.Name) || d.GroupName.Equals(Department.GroupName) && d.DepartmentId != Department.DepartmentId);
+        var isDepartmentDuplicated = await departmentService.GetList(d => (d.Name.Equals(Department.Name) || d.GroupName.Equals(Department.GroupName)) && d.DepartmentId != Department.DepartmentId);
         if (isDepartmentDuplicated.Any())
         {
             toastService.ShowWarning($"El Departamento {Department.Name} ya existe");
