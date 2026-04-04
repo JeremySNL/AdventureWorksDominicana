@@ -10,7 +10,6 @@ namespace AdventureWorksDominicana.Data.Models;
 /// Résumés submitted to Human Resources by job applicants.
 /// </summary>
 [Table("JobCandidate", Schema = "HumanResources")]
-[Index("BusinessEntityId", Name = "IX_JobCandidate_BusinessEntityID")]
 public partial class JobCandidate
 {
     /// <summary>
@@ -18,6 +17,7 @@ public partial class JobCandidate
     /// </summary>
     [Key]
     [Column("JobCandidateID")]
+    [Required(ErrorMessage = "El ID del candidato es obligatorio")]
     public int JobCandidateId { get; set; }
 
     /// <summary>
@@ -30,12 +30,14 @@ public partial class JobCandidate
     /// Résumé in XML format.
     /// </summary>
     [Column(TypeName = "xml")]
+    [StringLength(int.MaxValue, MinimumLength = 10, ErrorMessage = "El currículum debe tener al menos 10 caracteres")]
     public string? Resume { get; set; }
 
     /// <summary>
     /// Date and time the record was last updated.
     /// </summary>
     [Column(TypeName = "datetime")]
+    [Required(ErrorMessage = "La fecha de modificación es obligatoria")]
     public DateTime ModifiedDate { get; set; }
 
     [ForeignKey("BusinessEntityId")]
