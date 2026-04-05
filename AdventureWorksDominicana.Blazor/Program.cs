@@ -85,6 +85,7 @@ builder.Services.AddScoped<ProductSubcategoryService>();
 builder.Services.AddScoped<StateProvinceService>();
 builder.Services.AddScoped<CultureService>();
 builder.Services.AddScoped<LocationService>();
+builder.Services.AddScoped<JobCandidateService>();
 
 var app = builder.Build();
 
