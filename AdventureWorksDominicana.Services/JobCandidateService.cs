@@ -45,6 +45,12 @@ public class JobCandidateService(IDbContextFactory<Contexto> DbFactory) : IServi
         return await contexto.JobCandidates.FirstOrDefaultAsync(j => j.JobCandidateId == id);
     }
 
+    public async Task<VJobCandidate?> BuscarView(int id)
+    {
+        await using var contexto = await DbFactory.CreateDbContextAsync();
+        return await contexto.VJobCandidates.FirstOrDefaultAsync(j => j.JobCandidateId == id);
+    }
+
     public async Task<bool> Eliminar(int id)
     {
         await using var contexto = await DbFactory.CreateDbContextAsync();
@@ -55,5 +61,23 @@ public class JobCandidateService(IDbContextFactory<Contexto> DbFactory) : IServi
     {
         await using var contexto = await DbFactory.CreateDbContextAsync();
         return await contexto.JobCandidates.Where(criterio).ToListAsync();
+    }
+
+    public async Task<List<VJobCandidate>> GetListViewPersonal(Expression<Func<VJobCandidate, bool>> criterio)
+    {
+        await using var contexto = await DbFactory.CreateDbContextAsync();
+        return await contexto.VJobCandidates.Where(criterio).ToListAsync();
+    }
+
+    public async Task<List<VJobCandidateEmployment>> GetListViewEmployment(Expression<Func<VJobCandidateEmployment, bool>> criterio)
+    {
+        await using var contexto = await DbFactory.CreateDbContextAsync();
+        return await contexto.VJobCandidateEmployments.Where(criterio).ToListAsync();
+    }
+
+    public async Task<List<VJobCandidateEducation>> GetListViewEducation(Expression<Func<VJobCandidateEducation, bool>> criterio)
+    {
+        await using var contexto = await DbFactory.CreateDbContextAsync();
+        return await contexto.VJobCandidateEducations.Where(criterio).ToListAsync();
     }
 }
