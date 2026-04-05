@@ -1,0 +1,213 @@
+﻿@page "/JobCandidate/Create"
+@rendermode InteractiveServer
+
+@inject JobCandidateService jobCandidateService;
+@inject ToastService toastService;
+@inject NavigationManager navigationManager;
+@inject CountryRegionsService countryRegionsService;
+@inject StateProvinceService stateProvinceService;
+
+<EditForm Model="PersonalInfo" FormName="crearJobCandidate">
+    <div class="container">
+        <div class="card shadow-lg">
+            <div class="card-header text-center">
+                <h4>Crear JobCandidate</h4>
+            </div>
+            <div class="card-body">
+                @* Prefijo del nombre *@
+                <div class="mb-3">
+                    <label><strong>Prefijo del nombre</strong></label>
+                    <input class="form-control" type="text" @bind="PersonalInfo.NamePrefix" placeholder="Escriba el prefijo del nombre del candidato..." />
+                </div>
+
+                @* Primer nombre *@
+                <div class="mb-3">
+                    <label><strong>Primer nombre</strong></label>
+                    <input class="form-control" type="text" @bind="PersonalInfo.NameFirst" placeholder="Escriba el primer nombre del candidato..." />
+                </div>
+
+                @* Segundo nombre *@
+                <div class="mb-3">
+                    <label><strong>Segundo nombre</strong></label>
+                    <input class="form-control" type="text" @bind="PersonalInfo.NameMiddle" placeholder="Escriba el segundo nombre del candidato..." />
+                </div>
+
+                @* Apellido *@
+                <div class="mb-3">
+                    <label><strong>Apellido</strong></label>
+                    <input class="form-control" type="text" @bind="PersonalInfo.NameLast" placeholder="Escriba el apellido del candidato..." />
+                </div>
+
+                @* Subfijo del nombre *@
+                <div class="mb-3">
+                    <label><strong>Subfijo del nombre</strong></label>
+                    <input class="form-control" type="text" @bind="PersonalInfo.NameSuffix" placeholder="Escriba el subfijo del nombre de el candidato..." />
+                </div>
+                
+                @* Email *@
+                <div class="mb-3">
+                    <label><strong>Email</strong></label>
+                    <input class="form-control" type="text" @bind="PersonalInfo.Email" placeholder="Escriba el apellido..." />
+                </div>
+
+                @* Skills *@
+                <div class="mb-3">
+                    <label><strong>Habilidades</strong></label>
+                    <input class="form-control" type="text" @bind="PersonalInfo.Skills" placeholder="Escriba las habilidades del candidato..." />
+                </div>
+
+                @* WebSite *@
+                <div class="mb-3">
+                    <label><strong>Portafolio</strong></label>
+                    <input class="form-control" type="text" @bind="PersonalInfo.WebSite" placeholder="Escriba el apellido..." />
+                </div>
+
+                @* Tipo de direccion *@
+                <div class="mb-3">
+                    <label><strong>Tipo de direcci&oacute;n</strong></label>
+                    <input class="form-control" type="text" @bind="PersonalInfo.AddrType" placeholder="Escriba el apellido..." />
+                </div>
+            
+                @* CountryRegion Code *@
+                <div class="mb-3">
+                    <label class="form-label"><strong>Pa&iacute;s/regi&oacute;n</strong></label>
+                    <select class="form-select" @bind="@PersonalInfo.AddrLocCountryRegion" @bind:after="CargarStateProvinces">
+                        <option value="" disabled hidden selected>Seleccione un pa&iacute;s/regi&oacute;n...</option>
+                        @foreach (var countryRegion in ListaCountryRegion)
+                        {
+                            <option value="@countryRegion.CountryRegionCode">@countryRegion.Name (@countryRegion.CountryRegionCode)</option>
+                        }
+                    </select>
+                    <ValidationMessage For="(() => PersonalInfo.AddrLocCountryRegion)" />
+                </div>
+            
+                @* State Province *@
+                <div class="mb-3">
+                    <label class="form-label"><strong>Estado/provincia</strong></label>
+                    <select class="form-select" @bind="PersonalInfo.AddrLocState">
+                        @if (string.IsNullOrEmpty(PersonalInfo.AddrLocCountryRegion))
+                        {
+                            <option value="" disabled selected hidden>Primero seleccione un país</option>
+                        }
+                        else if (!ListaStateProvince.Any())
+                        {
+                            <option value="" disabled selected hidden>
+                                No hay estados/provincias disponibles para @ObtenerNombrePais(PersonalInfo.AddrLocCountryRegion)
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="" disabled selected hidden>Seleccione un estado/provincia...</option>
+                            @foreach (var stateProvince in ListaStateProvince)
+                            {
+                                <option value="@stateProvince.Name">@stateProvince.Name</option>
+                            }
+                        }
+                    </select>
+                    <ValidationMessage For="(() => PersonalInfo.AddrLocState)" />
+                </div>
+            
+                @* Ciudad *@
+                <div class="mb-3">
+                    <label><strong>Ciudad</strong></label>
+                    <input class="form-control" type="text" @bind="PersonalInfo.AddrLocCity" placeholder="Escriba el apellido..." />
+                </div>
+            
+                @* Codigo postal *@
+                <div class="mb-3">
+                    <label><strong>C&oacute;digo postal</strong></label>
+                    <input class="form-control" type="text" @bind="PersonalInfo.AddrPostalCode" placeholder="Escriba el apellido..." />
+                </div>
+
+                @* Experiencia laboral *@
+                <div class="border border-success p-3 mb-3 rounded-3">
+                    <h5>Experiencia laboral</h5>
+                    <div class="table-responsive">
+                        <QuickGrid Class="table table-striped table-bordered table-hover" Items="ListaEmploymentInfo.AsQueryable()">
+                            <PropertyColumn Property="@(j => j.EmpOrgName)" Sortable="true" Title="Empresa" />
+                            <PropertyColumn Property="@(j => j.EmpJobTitle)" Sortable="true" Title="Puesto" />
+                            <PropertyColumn Property="@(j => j.EmpResponsibility)" Sortable="true" Title="Responsabilidades" />
+                            <PropertyColumn Property="@(j => j.EmpStartDate)" Format="dd-MM-yyy" Sortable="true" Title="Fecha inicio" />
+                            <PropertyColumn Property="@(j => j.EmpEndDate)" Format="dd-MM-yyy" Sortable="true" Title="Fecha final" />
+                            <TemplateColumn Title="Fecha final" Context="empleo">
+                                @if (!string.IsNullOrEmpty(empleo.EmpLocCountryRegion))
+                                {
+                                    <p class="form-control-plaintext">
+                                        @empleo.EmpLocCity, @empleo.EmpLocState, @empleo.EmpLocCountryRegion
+                                    </p>
+                                }
+                            </TemplateColumn>
+                        </QuickGrid>
+                    </div>
+                </div>
+
+                @* Formacion academica *@
+                <div class="border border-success p-3 mb-3 rounded-3">
+                    <h5>Formaci&oacute;n acad&eacute;mica</h5>
+                    <div class="table-responsive">
+                        <QuickGrid Class="table table-striped table-bordered table-hover" Items="ListaEducationInfo.AsQueryable()">
+                            <PropertyColumn Property="@(j => j.EduSchool)" Sortable="true" Title="Instituci&oacute;n" />
+                            <PropertyColumn Property="@(j => j.EduDegree)" Sortable="true" Title="T&iacute;tulo" />
+                            <PropertyColumn Property="@(j => j.EduLevel)" Sortable="true" Title="Nivel de educaci&oacute;n" />
+                            <PropertyColumn Property="@(j => j.EduStartDate)" Format="dd-MM-yyy" Sortable="true" Title="Fecha inicio" />
+                            <PropertyColumn Property="@(j => j.EduEndDate)" Format="dd-MM-yyy" Sortable="true" Title="Fecha final" />
+                            <TemplateColumn Title="Fecha final" Context="formacion">
+                                @if (!string.IsNullOrEmpty(formacion.EduLocCountryRegion))
+                                {
+                                    <p class="form-control-plaintext">
+                                        @formacion.EduLocCity, @formacion.EduLocState, @formacion.EduLocCountryRegion
+                                    </p>
+                                }
+                            </TemplateColumn>
+                        </QuickGrid>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <a class="btn btn-secondary bi bi-arrow-left"> Volver</a>
+                <button class="btn btn-primary bi bi-floppy"> Guardar</button>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    public JobCandidatePersonalDto PersonalInfo { get; set; } = new JobCandidatePersonalDto();
+    public JobCandidateEmploymentDto EmploymentInfo { get; set; } = new JobCandidateEmploymentDto();
+    public JobCandidateEducationDto EducationInfo { get; set; } = new JobCandidateEducationDto();
+    public CountryRegion CountryRegion { get; set; } = new CountryRegion();
+    public List<JobCandidateEmploymentDto> ListaEmploymentInfo { get; set; } = new List<JobCandidateEmploymentDto>();
+    public List<JobCandidateEducationDto> ListaEducationInfo { get; set; } = new List<JobCandidateEducationDto>();
+    public List<CountryRegion> ListaCountryRegion { get; set; } = new List<CountryRegion>();
+    public List<StateProvince> ListaStateProvince { get; set; } = new List<StateProvince>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        ListaCountryRegion = await countryRegionsService.GetList(c => !c.CountryRegionCode.Equals(""));
+        ListaCountryRegion = ListaCountryRegion.OrderBy(c => c.Name).ToList();
+    }
+
+
+
+    public async Task CargarStateProvinces()
+    {
+        PersonalInfo.AddrLocState = null;
+
+        // Cargar estados del país seleccionado
+        if (!string.IsNullOrEmpty(PersonalInfo.AddrLocCountryRegion))
+        {
+            ListaStateProvince = await stateProvinceService.GetList(s => s.CountryRegionCode.Trim().Equals(PersonalInfo.AddrLocCountryRegion));
+            ListaStateProvince = ListaStateProvince.OrderBy(t => t.Name).ToList();
+        }
+        else
+        {
+            ListaStateProvince = new List<StateProvince>();
+        }
+    }
+
+    private string ObtenerNombrePais(string countryCode)
+    {
+        var pais = ListaCountryRegion.FirstOrDefault(c => c.CountryRegionCode == countryCode);
+        return pais?.Name ?? countryCode;
+    }
+}

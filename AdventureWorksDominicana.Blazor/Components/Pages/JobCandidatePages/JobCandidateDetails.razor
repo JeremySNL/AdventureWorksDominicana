@@ -1,0 +1,160 @@
+﻿@page "/JobCandidate/Details/{JobCandidateId:int}"
+@rendermode InteractiveServer
+
+@inject JobCandidateService jobCandidateService;
+@inject ToastService toastService;
+@inject NavigationManager navigationManager;
+@inject CountryRegionsService countryRegionsService;
+
+<div class="container">
+    <div class="card shadow-lg">
+        <div class="card-header text-center">
+            <h4>Detalles de Job Candidate</h4>
+        </div>
+        <div class="card-body">
+            @* Nombre *@
+            <div class="mb-3">
+                <label><strong>Nombre</strong></label>
+                <p class="form-control-plaintext">@PersonalInfo.NamePrefix @PersonalInfo.NameFirst @PersonalInfo.NameMiddle @PersonalInfo.NameLast @PersonalInfo.NameSuffix</p>
+            </div>
+
+            @* Skills *@
+            <div class="mb-3">
+                <label><strong>Habilidades</strong></label>
+                <p class="form-control-plaintext">@PersonalInfo.Skills</p>
+            </div>
+
+            @* Email *@
+            <div class="mb-3">
+                <label><strong>Email</strong></label>
+                <p class="form-control-plaintext">@(string.IsNullOrEmpty(PersonalInfo.Email) ? "No especificado" : PersonalInfo.Email)</p>
+            </div>
+
+            @* WebSite *@
+            <div class="mb-3">
+                <label><strong>Portafolio</strong></label>
+                <a class="form-control-plaintext" href="@(string.IsNullOrEmpty(PersonalInfo.WebSite) ? "google.com" : PersonalInfo.Skills)">@(string.IsNullOrEmpty(PersonalInfo.WebSite) ? "No especificado" : PersonalInfo.WebSite)</a>
+            </div>
+
+            @* Estado *@
+            <div class="mb-3">
+                <label class="form-label fw-bold">Estado</label>
+                <p class="form-control-plaintext">
+                    @if (PersonalInfo.BusinessEntityId.HasValue)
+                    {
+                        <span class="badge bg-success">Contratado</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">Pendiente</span>
+                    }
+                </p>
+            </div>
+            
+            @* Pais *@
+            <div class="mb-3">
+                <label><strong>Pa&iacute;s</strong></label>
+                <p class="form-control-plaintext">@(string.IsNullOrEmpty(CountryRegion.Name) ? "No especificado" : CountryRegion.Name)</p>
+            </div>
+            
+            @* Estado *@
+            <div class="mb-3">
+                <label><strong>Estado/Provincia</strong></label>
+                <p class="form-control-plaintext">@(string.IsNullOrEmpty(PersonalInfo.AddrLocState) ? "No especificado" : PersonalInfo.AddrLocState)</p>
+            </div>
+            
+            @* Ciudad *@
+            <div class="mb-3">
+                <label><strong>Ciudad</strong></label>
+                <p class="form-control-plaintext">@(string.IsNullOrEmpty(PersonalInfo.AddrLocCity) ? "No especificado" : PersonalInfo.AddrLocCity)</p>
+            </div>
+            
+            @* Codigo postal *@
+            <div class="mb-3">
+                <label><strong>C&oacute;digo postal</strong></label>
+                <p class="form-control-plaintext">@(string.IsNullOrEmpty(PersonalInfo.AddrPostalCode) ? "No especificado" : PersonalInfo.AddrPostalCode)</p>
+            </div>
+
+            @* Experiencia laboral *@
+            <div class="border border-success p-3 mb-3 rounded-3">
+                <h5>Experiencia laboral</h5>
+                <div class="table-responsive">
+                    <QuickGrid Class="table table-striped table-bordered table-hover" Items="ListaEmploymentInfo.AsQueryable()">
+                        <PropertyColumn Property="@(j => j.EmpOrgName)" Sortable="true" Title="Empresa" />
+                        <PropertyColumn Property="@(j => j.EmpJobTitle)" Sortable="true" Title="Puesto" />
+                        <PropertyColumn Property="@(j => j.EmpResponsibility)" Sortable="true" Title="Responsabilidades" />
+                        <PropertyColumn Property="@(j => j.EmpStartDate)" Format="dd-MM-yyy" Sortable="true" Title="Fecha inicio" />
+                        <PropertyColumn Property="@(j => j.EmpEndDate)" Format="dd-MM-yyy" Sortable="true" Title="Fecha final" />
+                        <TemplateColumn Title="Fecha final" Context="empleo">
+                            @if (!string.IsNullOrEmpty(empleo.EmpLocCountryRegion))
+                            {
+                                <p class="form-control-plaintext">
+                                    @empleo.EmpLocCity, @empleo.EmpLocState, @empleo.EmpLocCountryRegion
+                                </p>
+                            }
+                        </TemplateColumn>
+                    </QuickGrid>
+                </div>
+            </div>
+
+            @* Formacion academica *@
+            <div class="border border-success p-3 mb-3 rounded-3">
+                <h5>Formaci&oacute;n acad&eacute;mica</h5>
+                <div class="table-responsive">
+                    <QuickGrid Class="table table-striped table-bordered table-hover" Items="ListaEducationInfo.AsQueryable()">
+                        <PropertyColumn Property="@(j => j.EduSchool)" Sortable="true" Title="Instituci&oacute;n" />
+                        <PropertyColumn Property="@(j => j.EduDegree)" Sortable="true" Title="T&iacute;tulo" />
+                        <PropertyColumn Property="@(j => j.EduLevel)" Sortable="true" Title="Nivel de educaci&oacute;n" />
+                        <PropertyColumn Property="@(j => j.EduStartDate)" Format="dd-MM-yyy" Sortable="true" Title="Fecha inicio" />
+                        <PropertyColumn Property="@(j => j.EduEndDate)" Format="dd-MM-yyy" Sortable="true" Title="Fecha final" />
+                        <TemplateColumn Title="Fecha final" Context="formacion">
+                            @if (!string.IsNullOrEmpty(formacion.EduLocCountryRegion))
+                            {
+                                <p class="form-control-plaintext">
+                                    @formacion.EduLocCity, @formacion.EduLocState, @formacion.EduLocCountryRegion
+                                </p>
+                            }
+                        </TemplateColumn>
+                    </QuickGrid>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer text-center">
+            <a class="btn btn-secondary bi bi-arrow-left" href="/JobCandidate/Index"> Volver</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int JobCandidateId { get; set; }
+
+    public VJobCandidate PersonalInfo { get; set; } = new VJobCandidate();
+    public CountryRegion CountryRegion { get; set; } = new CountryRegion();
+    public List<VJobCandidateEmployment> ListaEmploymentInfo { get; set; } = new List<VJobCandidateEmployment>();
+    public List<VJobCandidateEducation> ListaEducationInfo { get; set; } = new List<VJobCandidateEducation>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        PersonalInfo = await jobCandidateService.BuscarView(JobCandidateId);
+
+        if (PersonalInfo == null)
+        {
+            toastService.ShowError("Candidato no encontrado");
+            navigationManager.NavigateTo("/JobCandidate/Index");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(PersonalInfo.AddrLocCountryRegion))
+        {
+            CountryRegion = await countryRegionsService.Buscar(PersonalInfo.AddrLocCountryRegion) ?? new CountryRegion();
+            if (string.IsNullOrEmpty(CountryRegion.Name))
+            {
+                CountryRegion.Name = "Nombre no encontrado (" + PersonalInfo.AddrLocCountryRegion + ").";
+            }
+        }
+
+        ListaEducationInfo = await jobCandidateService.GetListViewEducation(j => j.JobCandidateId == JobCandidateId);
+        ListaEmploymentInfo = await jobCandidateService.GetListViewEmployment(j => j.JobCandidateId == JobCandidateId);
+    }
+}
