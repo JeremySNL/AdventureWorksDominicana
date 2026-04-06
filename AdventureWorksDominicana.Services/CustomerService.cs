@@ -31,4 +31,13 @@ public class CustomerService(IDbContextFactory<Contexto> DbFactory) : IService<C
     {
         throw new NotImplementedException();
     }
+
+    public async Task<List<int>> GetCustomerIds(int businessEntityId)
+    {
+        await using var contexto = await DbFactory.CreateDbContextAsync();
+        return await contexto.Customers
+            .Where(c => c.PersonId == businessEntityId)
+            .Select(c => c.CustomerId)
+            .ToListAsync();
+    }
 }
