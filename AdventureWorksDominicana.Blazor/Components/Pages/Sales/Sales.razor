@@ -1,13 +1,13 @@
 ﻿@page "/Sales/"
 
-
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize(Roles = "Customer")]
+@attribute [Authorize(Roles = "Customer, Admin")]
 @rendermode InteractiveServer
+
 @inject ProductService productService
 @inject ShoppingCartItemService shoppingCartItemService
 @inject ToastService toastService
 @inject NavigationManager navigationManager
+@inject AuthenticationStateProvider authenticationStateProvider;
 
 <PageTitle>SalesOrderHeader Index</PageTitle>
 <div class="">
@@ -22,7 +22,7 @@
                 <a href="Orders">Orders</a>
                 <a href="ShoppingCart" class="btn btn-primary shopping-cart-container">
                     <i class="bi bi-cart"></i>
-                     <span>@shoppingCount</span>
+                    <span>@shoppingCount</span>
                 </a>
             </div>
         </div>
@@ -37,7 +37,7 @@
                         <option>Por Categoria</option>
                     </select>
                     <i class="btn btn-primary bi bi-filter"></i>
-                </div>  
+                </div>
             </div>
             <div class="sale-products">
                 @foreach (var p in PagedProducts)
@@ -82,14 +82,28 @@
     private PaginationState pages = new PaginationState { ItemsPerPage = 5 };
     private DateTime? StartDate = DateTime.Today, EndDate = DateTime.Today;
     private string Filtro = string.Empty, ValorFiltro = string.Empty;
-    private List<Product> PagedProducts = new List<Product>(); 
+    private List<Product> PagedProducts = new List<Product>();
 
     private int CurrentPage = 1;
     private int PageSize = 12;
     private int TotalPaginas => (int)Math.Ceiling((double)ProductList.Count / PageSize);
 
+    private ClaimsPrincipal? User { get; set; }
+    private bool IsAuthenticated { get; set; }
+    private string? UserEmail { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        // Busca el usuario logeado
+        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+        User = authState.User;
+        IsAuthenticated = User.Identity?.IsAuthenticated ?? false;
+        
+        if (IsAuthenticated)
+        {
+            UserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        }
+
         ProductList = await productService.GetList(p => true);
         ActualizarVista();
         await CountProductsShopping();
@@ -97,27 +111,28 @@
 
     private async Task CountProductsShopping()
     {
-        var productsShoppingList = await shoppingCartItemService.GetList(s => true);
+        var productsShoppingList = await shoppingCartItemService.GetList(s => s.ShoppingCartId.Trim().ToLower().Equals(UserEmail));
         shoppingCount = productsShoppingList.Count();
     }
 
     private async Task Guardar(int productId)
     {
-        var creado = await shoppingCartItemService.Guardar(
+        
+        try
+        {
+            var creado = await shoppingCartItemService.Guardar(
             new ShoppingCartItem
             {
-                ShoppingCartId = $"CARID-{Random.Shared.Next(10000, 99999)}",
+                ShoppingCartId = UserEmail,
                 Quantity = 1,
                 ProductId = productId,
                 DateCreated = DateTime.Now,
                 ModifiedDate = DateTime.Now
-            }
-        );
-        try
-        {
+            });
             toastService.ShowSuccess("Producto añadido al carrito");
             await CountProductsShopping();
-        }catch(Exception ex)
+        }
+        catch (Exception ex)
         {
             toastService.ShowSuccess("Producto no pudo ser añadido al carrito");
         }
