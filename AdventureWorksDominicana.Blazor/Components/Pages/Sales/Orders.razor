@@ -1,8 +1,16 @@
 ﻿@page "/Orders"
+
 @rendermode InteractiveServer
+
 @inject SalesOrderHeaderService salesOrderHeaderService
 @inject NavigationManager navigationManager
+@inject EmailAddressService emailAddressService
+@inject AuthenticationStateProvider authenticationStateProvider;
+@inject CustomerService customerService
+@inject ToastService toastService
+
 <PageTitle>Orders</PageTitle>
+
 <div class="container">
     @* Boton de volver *@
     <span class="btn btn-outline-primary bi bi-arrow-left mb-2" @onclick="GoToSale"> Volver</span>
@@ -58,9 +66,40 @@
 @code {
     private List<SalesOrderHeader> SalesOrderHeadersList = new List<SalesOrderHeader>();
 
+    private ClaimsPrincipal? User { get; set; }
+    private bool IsAuthenticated { get; set; }
+    private string? UserEmail { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
-        SalesOrderHeadersList = await salesOrderHeaderService.GetList(s => true);
+        // 1. Obtener usuario logueado
+        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated != true) return;
+
+        var userEmail = user.FindFirst(ClaimTypes.Email)?.Value;
+        if (string.IsNullOrEmpty(userEmail))
+        {
+            toastService.ShowError("Correo del usuario invalido");
+            navigationManager.NavigateTo("/Sales/");
+            return;
+        }
+
+        // 2. Buscar el email
+        var email = await emailAddressService.BuscarPorEmail(userEmail);
+        if (email == null)
+        {
+            toastService.ShowError("Correo no encontrado.");
+            navigationManager.NavigateTo("/Sales/");
+            return;
+        }
+
+        // 3. Obtener TODOS los CustomerID asociados a esa persona
+        var customerIds = await customerService.GetCustomerIds(email.BusinessEntityId);
+        
+        // 4. Obtener órdenes de TODOS esos CustomerID
+        SalesOrderHeadersList = await salesOrderHeaderService.GetList(s => customerIds.Contains(s.CustomerId));
     }
 
     private void GoToSale() => navigationManager.NavigateTo("/Sales");
