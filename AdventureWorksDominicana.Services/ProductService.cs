@@ -33,6 +33,12 @@ public class ProductService(IDbContextFactory<Contexto> DbContextFactory) : ISer
             .ToListAsync();
     }
 
+    public async Task<List<Product>> GetListIndex(Expression<Func<Product, bool>> criterio)
+    {
+        await using var contexto = await DbContextFactory.CreateDbContextAsync();
+        return await contexto.Products.AsNoTracking().Include(p => p.ProductSubcategory).Where(criterio).ToListAsync();
+    }
+
     public async Task<bool> Existe(int id)
     {
         await using var contexto = await DbContextFactory.CreateDbContextAsync();
@@ -98,13 +104,10 @@ public class ProductService(IDbContextFactory<Contexto> DbContextFactory) : ISer
         await using var contexto = await DbContextFactory.CreateDbContextAsync();
         try
         {
-            // Intentar Borrado Físico (Solo funcionará si es un producto nuevo sin historial)
             return await contexto.Products.Where(p => p.ProductId == id).ExecuteDeleteAsync() > 0;
         }
-        catch (Exception) // Atrapamos Exception general porque ExecuteDelete tira SqlException
+        catch (Exception) 
         {
-            // Plan B: Borrado Lógico (Soft Delete)
-            // AdventureWorks NO permite borrar productos facturados. Para "eliminarlo", lo inactivamos.
             var producto = await contexto.Products.FindAsync(id);
             if (producto != null)
             {
