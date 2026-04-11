@@ -325,7 +325,7 @@
         {
             if (showRegisterAddress)
             {
-                var address = new Address
+                var newAddress = new Address
                 {
                     AddressLine1 = Address.AddressLine1,
                     AddressLine2 = Address.AddressLine2,
@@ -336,23 +336,8 @@
                     ModifiedDate = DateTime.Now
                 };
 
-                await addressService.Guardar(address);
+                await addressService.Guardar(newAddress);
 
-                await businessEntityAddressService.Guardar(
-                    new BusinessEntityAddress
-                    {
-                        BusinessEntityId = businessEntityId,
-                        AddressId = address.AddressId,
-                        AddressTypeId = 1,
-                        Rowguid = Guid.NewGuid(),
-                        ModifiedDate = DateTime.Now
-                    }
-                );
-
-                toastService.ShowSuccess("direccion creada");
-            }
-            else
-            {
                 await businessEntityAddressService.Guardar(
                     new BusinessEntityAddress
                     {
@@ -366,6 +351,20 @@
                 Address = new();
                 toastService.ShowSuccess("direccion creada");
             }
+            else
+            {
+                await businessEntityAddressService.Guardar(
+                    new BusinessEntityAddress
+                    {
+                        BusinessEntityId = businessEntityId,
+                        AddressId = SalesOrderHeader.ShipToAddressId,
+                        AddressTypeId = 1,
+                        Rowguid = Guid.NewGuid(),
+                        ModifiedDate = DateTime.Now
+                    }
+                );
+                toastService.ShowSuccess("direccion creada");
+            }
         }catch(Exception ex)
         {
             toastService.ShowError("Hubo un error en la creacion de la direccion");
@@ -376,26 +375,39 @@
     {
         try
         {
-            var creditCard = new CreditCard
-            {
-                CardType = CreditCard.CardType,
-                CardNumber = CreditCard.CardNumber,
-                ExpMonth = CreditCard.ExpMonth,
-                ExpYear = CreditCard.ExpYear,
-                ModifiedDate = DateTime.Now
-            };
-            await creditCardService.Guardar(creditCard);
-            await personCreditCardService.Guardar(
-                new PersonCreditCard
+            if (showRegisterCreditcard){
+                var creditCard = new CreditCard
                 {
-                    BusinessEntityId = businessEntityId,
-                    CreditCardId = creditCard.CreditCardId,
+                    CardType = CreditCard.CardType,
+                    CardNumber = CreditCard.CardNumber,
+                    ExpMonth = CreditCard.ExpMonth,
+                    ExpYear = CreditCard.ExpYear,
                     ModifiedDate = DateTime.Now
-                }
-            );
+                };
+                await creditCardService.Guardar(creditCard);
+                await personCreditCardService.Guardar(
+                    new PersonCreditCard
+                    {
+                        BusinessEntityId = businessEntityId,
+                        CreditCardId = creditCard.CreditCardId,
+                        ModifiedDate = DateTime.Now
+                    }
+                );
+                CreditCard = new();
+                toastService.ShowSuccess("Tarjeta creada");
 
-            toastService.ShowSuccess("Tarjeta creada");
-
+            }
+            else{
+                await personCreditCardService.Guardar(
+                    new PersonCreditCard
+                    {
+                        BusinessEntityId = businessEntityId,
+                        CreditCardId = SalesOrderHeader.CreditCardId,
+                        ModifiedDate = DateTime.Now
+                    }
+                );
+            }
+            
         }
         catch (Exception ex)
         {
@@ -482,9 +494,9 @@
 
     private void GetBalance()
     {
-        GetDiscountPct();
         GetSubtotal();
-        GetTaxes();
+        GetDiscountPct();
+        GetTaxes();   
         GetFreight();
         GetTotal();
     }

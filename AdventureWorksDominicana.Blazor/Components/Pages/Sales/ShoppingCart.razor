@@ -54,7 +54,7 @@
                             </div>
 
                             <div class="cart-quantity">
-                                <button @onclick="() => MinusQuentity(s.ShoppingCartItemId)">-</button>
+                                <button @onclick="() => MinusQuantity(s.ShoppingCartItemId)">-</button>
                                 <span>@s.Quantity</span>
                                 <button @onclick="() => SumQuentity(s.ShoppingCartItemId)">+</button>
                             </div>
@@ -104,7 +104,7 @@
                     </span>
                 </div>
 
-                <button class="btn btn-fill w-100 mt-3">Finalizar compra</button>
+                <button class="btn btn-fill w-100 mt-3" @onclick="GoToCheckout">Finalizar compra</button>
 
             </div>
         }
@@ -115,10 +115,10 @@
     private List<ShoppingCartItem> ShoppingCartItemList = new List<ShoppingCartItem>();
 
     private ClaimsPrincipal? User { get; set; }
-
-    private string? UserEmail { get; set; }
     private string currencyRateId;
-
+    private bool IsAuthenticated { get; set; }
+    private string? UserEmail { get; set; }
+    private List<Customer> userCurrent = new List<Customer>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -135,6 +135,7 @@
     }
 
     private void GoToSale() => navigationManager.NavigateTo("/Sales");
+    private void GoToCheckout() => navigationManager.NavigateTo("/Checkout");
 
     private async Task SumQuentity(int itemId)
     {

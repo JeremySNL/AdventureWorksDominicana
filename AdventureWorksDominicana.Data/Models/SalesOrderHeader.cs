@@ -114,7 +114,7 @@ public partial class SalesOrderHeader
     /// Credit card identification number. Foreign key to CreditCard.CreditCardID.
     /// </summary>
     [Column("CreditCardID")]
-    public int? CreditCardId { get; set; }
+    public int CreditCardId { get; set; }
 
     /// <summary>
     /// Approval code provided by the credit card company.
