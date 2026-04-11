@@ -98,14 +98,25 @@ public class ProductService(IDbContextFactory<Contexto> DbContextFactory) : ISer
         await using var contexto = await DbContextFactory.CreateDbContextAsync();
         try
         {
+            // Intentar Borrado Físico (Solo funcionará si es un producto nuevo sin historial)
             return await contexto.Products.Where(p => p.ProductId == id).ExecuteDeleteAsync() > 0;
         }
-        catch (DbUpdateException ex)
+        catch (Exception) // Atrapamos Exception general porque ExecuteDelete tira SqlException
         {
-            throw new ProductDependentDataException("No se puede eliminar el producto porque tiene dependencias activas (ej. Ventas, Inventario).", ex);
+            // Plan B: Borrado Lógico (Soft Delete)
+            // AdventureWorks NO permite borrar productos facturados. Para "eliminarlo", lo inactivamos.
+            var producto = await contexto.Products.FindAsync(id);
+            if (producto != null)
+            {
+                producto.SellEndDate = DateTime.Now;
+                contexto.Products.Update(producto);
+                await contexto.SaveChangesAsync();
+                return true; ¿
+            }
+            return false;
         }
-        catch { return false; }
     }
+
 }
 
 public class ProductDependentDataException : Exception
