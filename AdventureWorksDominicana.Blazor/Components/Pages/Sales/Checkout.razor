@@ -5,6 +5,7 @@
 @inject ShoppingCartItemService shoppingCartItemService
 @inject CurrencyService currencyService
 @inject CustomerService customerService
+@inject CountryRegionsService countryRegionService
 @inject NavigationManager navigationManager
 @inject SalesOrderHeaderService salesOrderHeaderService
 @inject AuthenticationStateProvider authenticationStateProvider
@@ -31,13 +32,13 @@
         <div class="form-container">
             <h3>Información de Entrega</h3>
             
-            <EditForm Model="SalesOrderHeader" OnValidSubmit="SaveOrder">
+            <EditForm Model="SalesOrderHeader" OnSubmit="SaveOrder">
                 <DataAnnotationsValidator />
                 <ValidationSummary></ValidationSummary>
 
                 <!-- TERRITORIO -->
                 <div class="form-section">
-                    <h5>📍 Territorio</h5>
+                    <h5><span class="bi bi-geo"></span> Territorio</h5>
                     <select class="form-select" @bind="SalesOrderHeader.TerritoryId">
                         <option value="0">Seleccione un Territorio</option>
                         @foreach (var t in SalesTerritoriesList)
@@ -51,7 +52,7 @@
                 <!-- DIRECCIÓN DE ENVÍO -->
                 <div class="form-section">
                     <div class="section-header">
-                        <h5>📦 Dirección de Envío</h5>
+                        <h5><span class="bi bi-box-seam"></span> Dirección de Envío</h5>
                         <button type="button" class="btn-icon" @onclick="() => showNewAddress = !showNewAddress">
                             <i class="bi @(showNewAddress ? "bi-arrow-left" : "bi-plus-lg")"></i>
                             @(showNewAddress ? "Usar dirección existente" : "Agregar nueva")
@@ -83,24 +84,44 @@
                                     <input class="form-control" @bind="NewAddress.AddressLine2" placeholder="Apartamento, suite" />
                                 </div>
                                 <div class="col-md-6">
+                                    <label>País *</label>
+                                    <select class="form-select"
+                                            @bind="SelectedShippingCountryCode"
+                                            @bind:after="OnShippingCountryChanged">
+                                        <option value="">Seleccione...</option>
+                                        @foreach (var c in CountryList)
+                                        {
+                                            <option value="@c.CountryRegionCode">@c.Name</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label>Estado/Provincia *</label>
+                                    <select class="form-select" @bind="NewAddress.StateProvinceId" @bind:after="CalculateTotals">
+                                        <option value="0">Seleccione...</option>
+
+                                        @if (FilteredShippingStates.Any())
+                                        {
+                                            @foreach (var s in FilteredShippingStates)
+                                            {
+                                                <option value="@s.StateProvinceId">@s.Name</option>
+                                            }
+                                        }
+                                        else if (!string.IsNullOrEmpty(SelectedShippingCountryCode))
+                                        {
+                                            <option disabled value="">Este país no tiene estados/provincias</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
                                     <label>Ciudad *</label>
-                                    <input class="form-control" @bind="NewAddress.City" />
+                                    <input class="form-control" @bind="NewAddress.City" placeholder="Ej: Santiago" />
                                     <ValidationMessage For="() => NewAddress.City" />
                                 </div>
                                 <div class="col-md-6">
-                                    <label>Estado/Provincia *</label>
-                                    <select class="form-select" @bind="NewAddress.StateProvinceId">
-                                        <option value="0">Seleccione...</option>
-                                        @foreach (var s in StateProvinceList)
-                                        {
-                                            <option value="@s.StateProvinceId">@s.Name</option>
-                                        }
-                                    </select>
-                                    <ValidationMessage For="() => NewAddress.StateProvinceId" />
-                                </div>
-                                <div class="col-md-6">
                                     <label>Código Postal *</label>
-                                    <input class="form-control" @bind="NewAddress.PostalCode" maxlength="5" />
+                                    <input class="form-control" @bind="NewAddress.PostalCode" maxlength="5" placeholder="Ej: 31000" />
                                     <ValidationMessage For="() => NewAddress.PostalCode" />
                                 </div>
                             </div>
@@ -123,7 +144,7 @@
                 {
                     <div class="form-section">
                         <div class="section-header">
-                            <h5>🧾 Dirección de Facturación</h5>
+                            <h5><span class="bi bi-receipt"></span> Dirección de Facturación</h5>
                             <button type="button" class="btn-icon" @onclick="() => showNewBillingAddress = !showNewBillingAddress">
                                 <i class="bi @(showNewBillingAddress ? "bi-arrow-left" : "bi-plus-lg")"></i>
                                 @(showNewBillingAddress ? "Usar dirección existente" : "Agregar nueva")
@@ -146,29 +167,50 @@
                                 <div class="row g-3">
                                     <div class="col-12">
                                         <label>Dirección *</label>
-                                        <input class="form-control" @bind="NewBillingAddress.AddressLine1" />
+                                        <input class="form-control" @bind="NewBillingAddress.AddressLine1" placeholder="Calle, número" />
                                     </div>
                                     <div class="col-12">
                                         <label>Complemento</label>
-                                        <input class="form-control" @bind="NewBillingAddress.AddressLine2" />
+                                        <input class="form-control" @bind="NewBillingAddress.AddressLine2" placeholder="Apartamento, suite" />
                                     </div>
                                     <div class="col-md-6">
-                                        <label>Ciudad *</label>
-                                        <input class="form-control" @bind="NewBillingAddress.City" />
+                                        <label>País *</label>
+                                        <select class="form-select"
+                                                @bind="SelectedBillingCountryCode"
+                                                @bind:after="OnBillingCountryChanged">
+                                            <option value="">Seleccione...</option>
+                                            @foreach (var c in CountryList)
+                                            {
+                                                <option value="@c.CountryRegionCode">@c.Name</option>
+                                            }
+                                        </select>
                                     </div>
+
                                     <div class="col-md-6">
                                         <label>Estado/Provincia *</label>
                                         <select class="form-select" @bind="NewBillingAddress.StateProvinceId">
                                             <option value="0">Seleccione...</option>
-                                            @foreach (var s in StateProvinceList)
+
+                                            @if (FilteredBillingStates.Any())
                                             {
-                                                <option value="@s.StateProvinceId">@s.Name</option>
+                                                @foreach (var s in FilteredBillingStates)
+                                                {
+                                                    <option value="@s.StateProvinceId">@s.Name</option>
+                                                }
+                                            }
+                                            else if (!string.IsNullOrEmpty(SelectedBillingCountryCode))
+                                            {
+                                                <option disabled value="">Este país no tiene estados/provincias</option>
                                             }
                                         </select>
                                     </div>
                                     <div class="col-md-6">
+                                        <label>Ciudad *</label>
+                                        <input class="form-control" @bind="NewBillingAddress.City" placeholder="Ej: Santiago" />
+                                    </div>
+                                    <div class="col-md-6">
                                         <label>Código Postal *</label>
-                                        <input class="form-control" @bind="NewBillingAddress.PostalCode" maxlength="5" />
+                                        <input class="form-control" @bind="NewBillingAddress.PostalCode" maxlength="5" placeholder="Ej: 31000" />
                                     </div>
                                 </div>
                             </div>
@@ -178,7 +220,7 @@
 
                 <!-- MÉTODO DE ENVÍO -->
                 <div class="form-section">
-                    <h5>🚚 Método de Envío</h5>
+                    <h5><span class="bi bi-truck"></span> Método de Envío</h5>
                     <select class="form-select" @bind="SalesOrderHeader.ShipMethodId" @bind:after="CalculateTotals">
                         <option value="0">Seleccione un método</option>
                         @foreach (var m in ShipMethodsList)
@@ -192,7 +234,7 @@
                 <!-- TARJETA DE CRÉDITO -->
                 <div class="form-section">
                     <div class="section-header">
-                        <h5>💳 Método de Pago</h5>
+                        <h5><span class="bi bi-credit-card-2-front"></span> Método de Pago</h5>
                         <button type="button" class="btn-icon" @onclick="() => showNewCard = !showNewCard">
                             <i class="bi @(showNewCard ? "bi-arrow-left" : "bi-plus-lg")"></i>
                             @(showNewCard ? "Usar tarjeta existente" : "Agregar nueva")
@@ -259,7 +301,7 @@
 
                 <!-- COMENTARIOS -->
                 <div class="form-section">
-                    <h5>📝 Comentarios (opcional)</h5>
+                    <h5><span class="bi bi-journal-text"></span> Comentarios (opcional)</h5>
                     <textarea class="form-control" @bind="SalesOrderHeader.Comment" rows="3"
                               placeholder="Instrucciones especiales para la entrega..."></textarea>
                 </div>
@@ -324,7 +366,7 @@
                     </div>
                     <div class="summary-row">
                         <span>Descuentos</span>
-                        <span>- RD$ @discountPct.ToString("N2")</span>
+                        <span>- RD$ @discountAmount.ToString("N2")</span>
                     </div>
                     <div class="summary-total">
                         <span>Total</span>
@@ -348,10 +390,17 @@
     private List<SalesTerritory> SalesTerritoriesList = new();
     private List<Address> ShippingAddressesList = new();
     private List<Address> BillingAddressesList = new();
-    private List<StateProvince> StateProvinceList = new();
     private List<ShipMethod> ShipMethodsList = new();
     private List<CreditCard> CreditCardsList = new();
     private List<Currency> CurrenciesList = new();
+
+    // Paises y estados filtrados
+    private List<CountryRegion> CountryList = new();
+    private List<StateProvince> StateProvinceList = new();
+    private List<StateProvince> FilteredShippingStates = new();
+    private List<StateProvince> FilteredBillingStates = new();
+    private string? SelectedShippingCountryCode;
+    private string? SelectedBillingCountryCode;
 
     private Address NewAddress = new();
     private Address NewBillingAddress = new();
@@ -362,7 +411,7 @@
     private string? UserEmail { get; set; }
     private int businessEntityId;
 
-    private decimal taxes = 0, freight = 0, discountPct = 0, subtotal = 0, total = 0;
+    private decimal taxesRate = 0, taxes = 0, freight = 0, discountAmount = 0, subtotal = 0, total = 0;
     private const decimal GrToLb = 453.59237m;
     private const decimal KgToLb = 2.20462262m;
 
@@ -373,7 +422,6 @@
         await LoadCartData();
         await LoadReferenceData();
         CalculateTotals();
-        SalesOrderHeader.BillToAddressId = 100000;
     }
 
     private async Task LoadUserData()
@@ -396,22 +444,11 @@
     {
         ShoppingCartItemList = await shoppingCartItemService.GetList(s => s.ShoppingCartId == UserEmail);
 
-        // Cargar relaciones necesarias
-        foreach (var item in ShoppingCartItemList)
+        // Si el carrito esta vacio
+        if (!ShoppingCartItemList.Any())
         {
-            if (item.Product != null)
-            {
-                await LoadProductRelations(item.Product);
-            }
-        }
-    }
-
-    private async Task LoadProductRelations(Product product)
-    {
-        // Forzar carga de relaciones si es necesario
-        if (product.ProductSubcategory == null)
-        {
-            // Esto depende de cómo esté implementado tu servicio
+            toastService.ShowError("No hay productos en el carrito.");
+            navigationManager.NavigateTo("/Shoppingcart");
         }
     }
 
@@ -419,8 +456,9 @@
     {
         SalesTerritoriesList = await salesTerritoryService.GetList(t => true);
         ShipMethodsList = await shipMethodService.GetList(s => true);
-        StateProvinceList = await stateProvinceService.GetList(s => true);
         CurrenciesList = await currencyService.GetList(c => true);
+        CountryList = await countryRegionService.GetList(c => true);
+        StateProvinceList = await stateProvinceService.GetList(c => true);
 
         ShippingAddressesList = await addressService.GetList(a =>
             a.BusinessEntityAddresses.Any(b => b.BusinessEntityId == businessEntityId && b.AddressTypeId == 1));
@@ -450,24 +488,39 @@
 
     private void GetDiscountPct()
     {
-        discountPct = 0;
-        foreach (var p in ShoppingCartItemList)
+        discountAmount = ShoppingCartItemList.Sum(p =>
         {
-            var offer = p.Product?.SpecialOfferProducts?
-                .Select(x => x.SpecialOffer)
-                .Where(o => o.StartDate <= DateTime.Now && o.EndDate >= DateTime.Now)
-                .OrderByDescending(o => o.DiscountPct)
-                .FirstOrDefault();
-            var discount = offer?.DiscountPct ?? 0;
+            var discount = GetBestDiscountPct(p.Product);
             var totalProduct = (p?.Product?.ListPrice ?? 0) * (p?.Quantity ?? 0);
-            discountPct += discount * totalProduct;
-        }
+            return discount * totalProduct;
+        });
     }
 
     private void GetTaxes()
     {
-        var address = ShippingAddressesList.FirstOrDefault(a => a.AddressId == SalesOrderHeader.ShipToAddressId);
-        taxes = address?.StateProvince?.SalesTaxRates?.FirstOrDefault()?.TaxRate ?? 0;
+        decimal taxRate = 0;
+
+        if (showNewAddress)
+        {
+            var state = StateProvinceList
+                .FirstOrDefault(s => s.StateProvinceId == NewAddress.StateProvinceId);
+
+            taxRate = state?.SalesTaxRates?
+                .OrderByDescending(t => t.TaxRate)
+                .FirstOrDefault()?.TaxRate ?? 0;
+        }
+        else
+        {
+            var address = ShippingAddressesList
+                .FirstOrDefault(a => a.AddressId == SalesOrderHeader.ShipToAddressId);
+
+            taxRate = address?.StateProvince?.SalesTaxRates?
+                .OrderByDescending(t => t.TaxRate)
+                .FirstOrDefault()?.TaxRate ?? 0;
+        }
+
+        taxesRate = taxRate;
+        taxes = subtotal * taxesRate;
     }
 
     private void GetFreight()
@@ -496,14 +549,106 @@
 
     private void GetTotal()
     {
-        total = subtotal + (subtotal * taxes) + freight - discountPct;
+        total = subtotal + taxes + freight - discountAmount;
+    }
+
+    private bool ValidateForm()
+    {
+        // TERRITORIO
+        if (SalesOrderHeader.TerritoryId == 0)
+        {
+            toastService.ShowWarning("Seleccione un territorio");
+            return false;
+        }
+
+        // MÉTODO DE ENVÍO
+        if (SalesOrderHeader.ShipMethodId == 0)
+        {
+            toastService.ShowWarning("Seleccione un método de envío");
+            return false;
+        }
+
+        // ========================
+        // 🚚 SHIPPING ADDRESS
+        // ========================
+        if (showNewAddress)
+        {
+            if (!ValidateAddress(NewAddress))
+            {
+                toastService.ShowWarning("Complete correctamente la dirección de envío");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(SelectedShippingCountryCode))
+            {
+                toastService.ShowWarning("Seleccione un país de envío");
+                return false;
+            }
+        }
+        else
+        {
+            if (SalesOrderHeader.ShipToAddressId == 0)
+            {
+                toastService.ShowWarning("Seleccione una dirección de envío");
+                return false;
+            }
+        }
+
+        // ========================
+        // 🧾 BILLING ADDRESS
+        // ========================
+        if (!useSameAddressForBilling)
+        {
+            if (showNewBillingAddress)
+            {
+                if (!ValidateAddress(NewBillingAddress))
+                {
+                    toastService.ShowWarning("Complete correctamente la dirección de facturación");
+                    return false;
+                }
+
+                if (string.IsNullOrEmpty(SelectedBillingCountryCode))
+                {
+                    toastService.ShowWarning("Seleccione un país de facturación");
+                    return false;
+                }
+            }
+            else
+            {
+                if (SalesOrderHeader.BillToAddressId == 0)
+                {
+                    toastService.ShowWarning("Seleccione una dirección de facturación");
+                    return false;
+                }
+            }
+        }
+
+        // ========================
+        // 💳 TARJETA
+        // ========================
+        if (showNewCard)
+        {
+            if (!ValidateCreditCard())
+            {
+                toastService.ShowWarning("Complete correctamente la tarjeta");
+                return false;
+            }
+        }
+        else
+        {
+            if (SalesOrderHeader.CreditCardId == 0)
+            {
+                toastService.ShowWarning("Seleccione una tarjeta de crédito");
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // ========== VALIDACIONES ==========
-    private bool ValidateAddress(Address address, bool isRequired = true)
+    private bool ValidateAddress(Address address)
     {
-        if (!isRequired) return true;
-
         return !string.IsNullOrWhiteSpace(address.AddressLine1) &&
                !string.IsNullOrWhiteSpace(address.City) &&
                address.StateProvinceId > 0 &&
@@ -526,24 +671,8 @@
     {
         if (isSubmitting) return;
 
-        // Validaciones previas
-        if (SalesOrderHeader.TerritoryId == 0)
-        {
-            toastService.ShowWarning("Seleccione un territorio");
+        if (!ValidateForm())
             return;
-        }
-
-        if (SalesOrderHeader.ShipMethodId == 0)
-        {
-            toastService.ShowWarning("Seleccione un método de envío");
-            return;
-        }
-
-        if (!ValidateCreditCard())
-        {
-            toastService.ShowWarning("Complete los datos de la tarjeta de crédito");
-            return;
-        }
 
         isSubmitting = true;
         StateHasChanged();
@@ -551,6 +680,7 @@
         try
         {
             var order = await CreateOrder();
+
             if (order != null)
             {
                 toastService.ShowSuccess("¡Orden creada exitosamente!");
@@ -710,13 +840,12 @@
     {
         foreach (var item in ShoppingCartItemList)
         {
-            var offer = item.Product?.SpecialOfferProducts?
-                .Where(x => x.SpecialOffer.StartDate <= DateTime.Now && x.SpecialOffer.EndDate >= DateTime.Now)
-                .OrderByDescending(x => x.SpecialOffer.DiscountPct)
-                .FirstOrDefault();
+            var discountPct = GetBestDiscountPct(item.Product);
 
-            int specialOfferId = offer?.SpecialOfferId ?? 1;
-            var discountPct = offer?.SpecialOffer.DiscountPct ?? 0;
+            var specialOfferId = item.Product?.SpecialOfferProducts?
+                .Where(x => x.SpecialOffer.DiscountPct == discountPct)
+                .Select(x => x.SpecialOfferId)
+                .FirstOrDefault() ?? 1;
             var unitPrice = item?.Product?.ListPrice ?? 0;
             var quantity = item?.Quantity ?? 0;
             var unitPriceDiscount = unitPrice * discountPct;
@@ -757,6 +886,34 @@
         var cleanNumber = new string(numeroTarjeta.Where(char.IsDigit).ToArray());
         if (cleanNumber.Length <= 4) return cleanNumber.PadLeft(4, '0');
         return cleanNumber.Substring(cleanNumber.Length - 4);
+    }
+
+    private void OnShippingCountryChanged()
+    {
+        FilteredShippingStates = StateProvinceList
+            .Where(s => s.CountryRegionCode == SelectedShippingCountryCode)
+            .ToList();
+
+        NewAddress.StateProvinceId = 0;
+        CalculateTotals();
+    }
+
+    private void OnBillingCountryChanged()
+    {
+        FilteredBillingStates = StateProvinceList
+            .Where(s => s.CountryRegionCode == SelectedBillingCountryCode)
+            .ToList();
+
+        NewBillingAddress.StateProvinceId = 0;
+    }
+
+    private decimal GetBestDiscountPct(Product product)
+    {
+        return product?.SpecialOfferProducts?
+            .Select(x => x.SpecialOffer)
+            .Where(o => o.StartDate <= DateTime.Now && o.EndDate >= DateTime.Now)
+            .OrderByDescending(o => o.DiscountPct)
+            .FirstOrDefault()?.DiscountPct ?? 0;
     }
 
     private void GoToCart() => navigationManager.NavigateTo("/ShoppingCart");

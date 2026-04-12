@@ -25,17 +25,29 @@
 }
 
 .form-container {
-    background: white;
+    background-color: #F5F5F5;
+    border: 2px solid #E6E6E6;
     border-radius: 20px;
     padding: 25px;
     box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
 }
+
+    .form-container h3 {
+        color: #01398C;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e5e7eb;
+    }
 
 .form-section {
     margin-bottom: 25px;
     padding-bottom: 20px;
     border-bottom: 1px solid #e5e7eb;
 }
+
+    .form-section h5 {
+        color: #01398C;
+    }
 
     .form-section:last-child {
         border-bottom: none;
@@ -50,7 +62,7 @@
 
     .section-header h5 {
         margin: 0;
-        color: #374151;
+        color: #01398C;
     }
 
 .btn-icon {
@@ -123,7 +135,8 @@
 }
 
 .summary-card {
-    background: white;
+    background-color: #F5F5F5;
+    border: 2px solid #E6E6E6;
     border-radius: 20px;
     padding: 20px;
     box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
@@ -137,7 +150,7 @@
     }
 
 .summary-products {
-    max-height: 400px;
+    max-height: 180px;
     overflow-y: auto;
     margin-bottom: 20px;
 }
@@ -206,7 +219,7 @@
     color: #01398C;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 992px) {
     .checkout-container {
         grid-template-columns: 1fr;
     }
