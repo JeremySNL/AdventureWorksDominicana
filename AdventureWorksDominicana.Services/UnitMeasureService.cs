@@ -51,6 +51,6 @@ public class UnitMeasureService(IDbContextFactory<Contexto> DbFactory) : IServic
     public async Task<List<UnitMeasure>> GetList(Expression<Func<UnitMeasure, bool>> criterio)
     {
         await using var contexto = await DbFactory.CreateDbContextAsync();
-        return await contexto.UnitMeasures.Where(criterio).AsNoTracking().ToListAsync();-
+        return await contexto.UnitMeasures.Where(criterio).AsNoTracking().ToListAsync();
     }
 }
