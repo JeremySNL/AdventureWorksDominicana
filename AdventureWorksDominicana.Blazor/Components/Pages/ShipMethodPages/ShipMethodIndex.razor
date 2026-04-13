@@ -8,11 +8,11 @@
 
 @inject ShipMethodService shipMethodService
 
-<PageTitle>ShipMethods</PageTitle>
+<PageTitle>Métodos de envío</PageTitle>
 <div class="container-fluid">
     <div class="card shadow-lg">
         <div class="card-header d-flex justify-content-between">
-            <h4>Ship Methods</h4>
+            <h4>M&eacute;todos de env&iacute;o</h4>
             <a class="btn btn-primary" href="/ShipMethods/Create"><i class="bi bi-plus-square"></i> Crear</a>
         </div>
         <div class="card-body">
@@ -41,7 +41,6 @@
                 <div class="col-md-3">
                     <InputSelect class="form-select" @bind-Value="Filtros">
                         <option disabled value="">Elige un filtro</option>
-                        <option value="IdCart">ID</option>
                         <option value="Nombre">Nombre</option>
                     </InputSelect>
                 </div>
@@ -96,10 +95,6 @@
 
         if (!string.IsNullOrWhiteSpace(ValorFiltro))
         {
-            if (Filtros == "Id" && int.TryParse(ValorFiltro, out int id))
-            {
-                resultado = await shipMethodService.GetList(x => x.ShipMethodId == id);
-            }
             if (Filtros == "Nombre")
             {
                 resultado = await shipMethodService.GetList(x => x.Name.ToLower().Trim().Contains(ValorFiltro.ToLower().Trim()));
