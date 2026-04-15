@@ -89,7 +89,7 @@
     private ClaimsPrincipal? User { get; set; }
     private bool IsAuthenticated { get; set; }
     private string? UserEmail { get; set; }
-    protected override async Task OnInitializedAsync()
+   protected override async Task OnInitializedAsync()
     {
         var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
         User = authState.User;
@@ -98,7 +98,11 @@
         {
             UserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
         }
-        SalesOrderHeadersList = await salesOrderHeaderService.GetList(s => s.Customer.Person.EmailAddresses.Any(e => e.EmailAddress1 == UserEmail));
+        
+        var ordenes = await salesOrderHeaderService.GetList(s => s.Customer.Person.EmailAddresses.Any(e => e.EmailAddress1 == UserEmail));
+        
+        SalesOrderHeadersList = ordenes.OrderByDescending(o => o.SalesOrderId).ToList();
+        
         await RefreshStatus();
     }
 
